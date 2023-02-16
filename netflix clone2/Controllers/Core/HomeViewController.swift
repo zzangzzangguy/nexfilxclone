@@ -112,7 +112,7 @@ class HomeViewController: UIViewController {
                 }
             }
         case Sections.Upcoming.rawValue:
-            APIcaller.shared.getupcomingMoives { result in
+            APIcaller.shared.getupcomingMovies { result in
                 switch result {
                 case .success(let titles):
                     cell.configure(with:titles)
@@ -121,7 +121,7 @@ class HomeViewController: UIViewController {
                 }
             }
         case Sections.TopRated.rawValue:
-            APIcaller.shared.getupcomingMoives { result in
+            APIcaller.shared.getupcomingMovies { result in
                 switch result {
                 case .success(let titles):
                     cell.configure(with: titles)
