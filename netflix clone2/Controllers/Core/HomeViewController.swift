@@ -22,7 +22,7 @@ class HomeViewController: UIViewController {
     
     private let homefeedtable: UITableView = {
         let table = UITableView(frame: .zero, style: .grouped)
-        table.register(collectionviewTableViewCell.self, forCellReuseIdentifier: collectionviewTableViewCell.identifier)
+        table.register(CollectionViewTableViewCell.self, forCellReuseIdentifier: CollectionViewTableViewCell.identifier)
         return table
     }()
     
@@ -39,8 +39,8 @@ class HomeViewController: UIViewController {
         
         let headerview = heroHeaderUIview(frame:  CGRect(x: 0, y: 0, width: view.bounds.width, height: 450))
         homefeedtable.tableHeaderView = headerview
+        
 
-        //fetchData()
     }
     
     private func configureNavbar() {
@@ -79,9 +79,11 @@ class HomeViewController: UIViewController {
 
         func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
 
-            guard let cell = tableView.dequeueReusableCell(withIdentifier: collectionviewTableViewCell.identifier, for: indexPath) as? collectionviewTableViewCell else  {
+            guard let cell = tableView.dequeueReusableCell(withIdentifier:          CollectionViewTableViewCell.identifier, for: indexPath) as? CollectionViewTableViewCell else  {
                 return UITableViewCell()
             }
+
+            cell.delegate = self
 
             switch indexPath.section {
         case Sections.TrendingMovies.rawValue:
@@ -121,7 +123,7 @@ class HomeViewController: UIViewController {
                 }
             }
         case Sections.TopRated.rawValue:
-            APIcaller.shared.getupcomingMovies { result in
+            APIcaller.shared.getTopRated { result in
                 switch result {
                 case .success(let titles):
                     cell.configure(with: titles)
@@ -149,7 +151,7 @@ class HomeViewController: UIViewController {
             header.textLabel?.font = .systemFont(ofSize: 18, weight: .semibold)
             header.textLabel?.frame = CGRect(x: header.bounds.origin.x + 20, y: header.bounds.origin.y, width: 100, height: header.bounds.height)
             header.textLabel?.textColor = .white
-            header.textLabel?.text = header.textLabel?.text?.capitalizreFirstLetter()
+            header.textLabel?.text = header.textLabel?.text?.capitalizeFirstLetter()
         }
 
 
@@ -168,5 +170,14 @@ class HomeViewController: UIViewController {
     
 
 
+extension HomeViewController: CollectionViewTableViewCellDelegate {
+    func collectionViewTableViewCellDidTapCell(_ cell: CollectionViewTableViewCell, viewModel: TitlePreviewViewModel) {
+        DispatchQueue.main.async { [weak self] in
+            let vc = TitlePreviewViewController()
+            vc.configure(with: viewModel)
+            self?.navigationController?.pushViewController(vc, animated: true)
+        }
 
+    }
+}
 

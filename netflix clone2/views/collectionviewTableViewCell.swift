@@ -1,5 +1,5 @@
 //
-//  collectionviewTableViewCell.swift
+//  CollectionViewTableViewCell.swift
 //  netflix clone2
 //
 //  Created by 김기현 on 2023/02/01.
@@ -7,52 +7,54 @@
 
 import UIKit
 
-class collectionviewTableViewCell: UITableViewCell {
+protocol CollectionViewTableViewCellDelegate: AnyObject {
+    func collectionViewTableViewCellDidTapCell(_ cell: CollectionViewTableViewCell, viewModel: TitlePreviewViewModel)
+}
 
-    static let identifier = "colletionviewtablecell"
+class CollectionViewTableViewCell: UITableViewCell {
 
-    private var titles: [Title] = [Title]()
-    
-    
-    private let collectionview: UICollectionView = {
-        
+    static let identifier = "CollectionViewTableViewCell"
+
+    weak var delegate: CollectionViewTableViewCellDelegate?
+
+
+    private var titles: [Title] = []
+
+    private let collectionView: UICollectionView = {
         let layout = UICollectionViewFlowLayout()
         layout.itemSize=CGSize(width: 140, height: 200)
         layout.scrollDirection = .horizontal
-        let collectionview = UICollectionView(frame: .zero, collectionViewLayout: layout)
-        collectionview.register(TitleCollectionViewCell.self, forCellWithReuseIdentifier: TitleCollectionViewCell.identifier)
-        return collectionview
+        let collectionView = UICollectionView(frame: .zero, collectionViewLayout: layout)
+        collectionView.register(TitleCollectionViewCell.self, forCellWithReuseIdentifier: TitleCollectionViewCell.identifier)
+        return collectionView
     }()
-    
+
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
         contentView.backgroundColor = .systemPink
-        contentView.addSubview(collectionview)
-        
-        collectionview.delegate = self
-        collectionview.dataSource = self
+        contentView.addSubview(collectionView)
+        collectionView.delegate = self
+        collectionView.dataSource = self
     }
-    
-    
+
     required init?(coder: NSCoder) {
-        fatalError()
+        super.init(coder: coder)
     }
-    
+
     override func layoutSubviews() {
         super.layoutSubviews()
-        collectionview.frame = contentView.bounds
+        collectionView.frame = contentView.bounds
     }
 
     public func configure(with titles: [Title]) {
         self.titles = titles
         DispatchQueue.main.async { [weak self] in
-            self?.collectionview.reloadData()
+            self?.collectionView.reloadData()
         }
     }
 }
 
-
-extension collectionviewTableViewCell: UICollectionViewDelegate, UICollectionViewDataSource {
+extension CollectionViewTableViewCell: UICollectionViewDelegate, UICollectionViewDataSource {
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: TitleCollectionViewCell.identifier, for: indexPath) as? TitleCollectionViewCell else {
             return UICollectionViewCell()
@@ -65,8 +67,36 @@ extension collectionviewTableViewCell: UICollectionViewDelegate, UICollectionVie
 
         return cell
     }
-    
+
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
         return titles.count
+    }
+
+    func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+        collectionView.deselectItem(at: indexPath, animated: true)
+
+        let title = titles[indexPath.row]
+        guard let titleName = title.original_title ?? title.original_name else {
+            return
+        }
+
+        APIcaller.shared.getMovie(with: titleName + "trailer") { [weak self] result in
+            switch result {
+            case . success(let videoElement):
+
+                let title = self?.titles[indexPath.row]
+                guard let titleOverview = title?.overview else {
+                    return
+                }
+                guard let strongSelf = self else {
+                    return
+                }
+                let viewModel = TitlePreviewViewModel(title: titleName, youtubeView: videoElement, titleOverview: titleOverview)
+                self?.delegate?.collectionViewTableViewCellDidTapCell(strongSelf, viewModel:viewModel)
+
+            case .failure(let error):
+                print(error.localizedDescription)
+            }
+        }
     }
 }
