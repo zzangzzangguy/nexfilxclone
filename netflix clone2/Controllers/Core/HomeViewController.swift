@@ -39,6 +39,7 @@ class HomeViewController: UIViewController {
         
         let headerview = heroHeaderUIview(frame:  CGRect(x: 0, y: 0, width: view.bounds.width, height: 450))
         homefeedtable.tableHeaderView = headerview
+
         
 
     }
